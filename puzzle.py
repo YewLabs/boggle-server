@@ -27,6 +27,11 @@ class BoggleTeamData(models.Model):
     team = models.OneToOneField(Team, on_delete=models.CASCADE)
     world = models.TextField()
 
+class BoggleHighScoreData(models.Model):
+    team = models.ForeignKey(Team, on_delete=models.CASCADE)
+    level = models.PositiveIntegerField(default=0)
+    score = models.PositiveIntegerField(default=0)
+
 TIME_LIMITS_PER_LEVEL = [
     datetime.timedelta(seconds=300),
     datetime.timedelta(seconds=300),
@@ -104,6 +109,7 @@ class BoggleGameSpec:
 
 DATABASE_VERSION = 2
 ANSWER = 'THISISANANSWER!!'
+HISCORE_SCALE = 100000
 
 # TODO: make sure this is eventually 100
 CACHE_SIZE = 100
@@ -151,12 +157,15 @@ def get_total_score(game_spec, words):
         for word in words
     ])
 
+def get_max_score(game_spec):
+    return sum([w[1] for w in game_spec.wordlist])
+
 def gets_trophy_num(game_spec, words):
     return len(words) * 2 >= len(game_spec.wordlist)
 
 def gets_trophy_points(game_spec, words):
     score = get_total_score(game_spec, words)
-    max_score = sum([w[1] for w in game_spec.wordlist])
+    max_score = get_max_score(game_spec)
     return score * 2 >= max_score
 
 def gets_trophy_longest(game_spec, words):
@@ -248,6 +257,9 @@ class BoggleConsumer(TeamworkTimeConsumer):
             time_left = datetime.timedelta()
         return time_left / datetime.timedelta(milliseconds=1)
 
+    def get_cl_tot_time(self, game_data):
+        return self.get_time_limit(game_data) / datetime.timedelta(milliseconds=1)
+
     def get_score(self, game_data):
         return get_total_score(get_game_spec(game_data), game_data['words'])
 
@@ -264,6 +276,9 @@ class BoggleConsumer(TeamworkTimeConsumer):
         return True
 
     def stop_game(self, game_data):
+        max_score = get_max_score(get_game_spec(game_data))
+        hiscore = int(self.get_score(game_data) / max_score * HISCORE_SCALE)
+        self.set_hiscore(game_data['level'], hiscore)
         discard_game_spec_from_cache(game_data)
         game_data['running'] = False
         game_data['start_time'] = None
@@ -304,6 +319,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         if is_running:
             msg['level'] = game_data['level']
             msg['timeLeft'] = self.get_cl_time_left(game_data)
+            msg['totTime'] = self.get_cl_tot_time(game_data)
             msg['words'] = game_data['words']
             msg['score'] = self.get_score(game_data)
             msg['grid'] = get_game_spec(game_data).grid
@@ -394,6 +410,30 @@ class BoggleConsumer(TeamworkTimeConsumer):
     def handle_get_update(self, game_data, msg):
         return game_data, self.make_full_update(game_data)
 
+    def set_hiscore(self, level, score):
+        data = BoggleHighScoreData.objects.get_or_create(team=self.team, level=level)[0]
+        if score > data.score:
+            data.score = score
+            data.save()
+
+    def get_hiscores(self, level):
+        if not BoggleHighScoreData.objects.filter(level=level).filter(team=self.team).exists():
+            return None
+        scores = list(BoggleHighScoreData.objects.filter(level=level).order_by('-score').values_list('team__name', 'score'))
+        # TODO: add real high score
+        # scores += [('✈️✈️✈️ Galactic Trendsetters ✈️✈️✈️', int(0.9 * HISCORE_SCALE))]
+        # scores.sort(key=lambda t: t[1], reverse=True)
+        return scores
+
+    def handle_get_hiscores(self, msg):
+        if not V.has_key(msg, 'level') or not V.is_nat(msg['level'], 4):
+            return []
+        hiscores = self.get_hiscores(msg['level'])
+        return [BoggleAction.make_respond({
+            'type': 'hiscores',
+            'hiscores': hiscores,
+        })]
+
     def handle(self, msg):
         print('received ' + str(msg) + ' from ' + self.channel_name)
 
@@ -416,6 +456,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
         actions = []
         if msg_type in reducers:
             actions += self.handle_txn(reducers[msg_type], msg)
+        if msg_type == 'getHiscores':
+            actions += self.handle_get_hiscores(msg)
 
         for action in actions:
             if action.broadcast:
