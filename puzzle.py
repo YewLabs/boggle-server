@@ -372,7 +372,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         if not self.cl_num_games_valid(game_data, msg):
             return None, self.make_full_update(game_data)
 
-        all_words = get_game_spec(game_data).wordlist
+        all_words = [w for w in get_game_spec(game_data).wordlist if w[0] != get_game_spec(game_data).special]
         self.stop_game(game_data)
         return game_data, self.make_full_update(game_data, True, all_words=all_words)
 
