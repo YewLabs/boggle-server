@@ -310,16 +310,20 @@ class BoggleConsumer(TeamworkTimeConsumer):
             'grade': grade,
         })]
 
-    def make_full_update(self, game_data, broadcast=False):
+    def make_full_update(self, game_data, broadcast=False, all_words=None):
         is_running = game_data['running']
+        max_level = game_data['max_level']
         msg = {
             'type': 'full',
             'numGames': game_data['num_games'],
-            'maxLevel': game_data['max_level'],
+            'maxLevel': max_level,
             'running': is_running,
             'trophies': self.get_trophy_string(game_data),
             'roundTrophies': game_data['round_trophies'],
         }
+
+        if max_level >= 4:
+            msg['blanks'] = '_ _ _ _ _ _ _ _ _ _   _ _ _ _ _ _'
 
         if is_running:
             words = game_data['words']
@@ -337,6 +341,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
             if found_special:
                 msg['special'] = special
 
+        if all_words is not None:
+            msg['allWords'] = all_words
 
         return [BoggleAction(broadcast, msg)]
 
@@ -366,8 +372,9 @@ class BoggleConsumer(TeamworkTimeConsumer):
         if not self.cl_num_games_valid(game_data, msg):
             return None, self.make_full_update(game_data)
 
+        all_words = get_game_spec(game_data).wordlist
         self.stop_game(game_data)
-        return game_data, self.make_full_update(game_data, True)
+        return game_data, self.make_full_update(game_data, True, all_words=all_words)
 
     def get_round_trophies(self, game_data):
         level = game_data['level']
