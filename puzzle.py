@@ -398,10 +398,10 @@ class BoggleConsumer(TeamworkTimeConsumer):
         if len(entries) == 0:
             return None, self.make_grade(word, GRADE_WRONG)
         entry = entries[0]
-        if entry in game_data['words']:
+        if len([w for w in game_data['words'] if w[0] == entry[0]]) > 0:
             return None, self.make_grade(word, GRADE_DUPLICATE)
 
-        game_data['words'] += [entry]
+        game_data['words'] += [[entry[0], entry[1]]]
 
         round_trophies = self.get_round_trophies(game_data)
         new_trophies = round_trophies & (~game_data['trophies'])
