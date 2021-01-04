@@ -9,6 +9,7 @@ from asgiref.sync import async_to_sync
 from hunt.teamwork import TeamworkTimeConsumer
 from .validate import Validator as V
 from .gen_grid_list import _get_score_dict
+from .gen_grid import gen_grid
 
 class BoggleAction:
     def __init__(self, broadcast, data):
@@ -96,10 +97,9 @@ class BoggleGameSpec:
             (word, score) for word, score in
             _get_score_dict(board, level, {}).items()
         ]
-        print(wordlist)
         return BoggleGameSpec(
             level,
-            TESTING_BOARDS[level],
+            board,
             wordlist,
             wordlist[0][0]
         )
@@ -113,7 +113,14 @@ CACHE_SIZE = 100
 game_spec_cache = {}
 
 def gen_game_spec(level, seed):
-    return BoggleGameSpec.get_testing_spec(level)
+    grid, bonuses, special = gen_grid(level, seed)
+    wordlist = [
+        (word, score) for word, score in
+        _get_score_dict(grid, level, bonuses).items()
+    ]
+    return BoggleGameSpec(
+        level, grid, wordlist, special
+    )
 
 def discard_game_spec_from_cache(game_data):
     global game_spec_cache
@@ -157,13 +164,17 @@ def get_total_score(game_spec, words):
 def get_max_score(game_spec):
     return sum([w[1] for w in game_spec.wordlist])
 
+# TODO: make sure these are reasonable numbers
+TROPHY_NUM_WORDS_THRESHOLD = 0.5
+TROPHY_POINTS_THRESHOLD = 0.5
+
 def gets_trophy_num(game_spec, words):
-    return len(words) * 2 >= len(game_spec.wordlist)
+    return len(words) >= len(game_spec.wordlist) * TROPHY_NUM_WORDS_THRESHOLD
 
 def gets_trophy_points(game_spec, words):
     score = get_total_score(game_spec, words)
     max_score = get_max_score(game_spec)
-    return score * 2 >= max_score
+    return score >= max_score * TROPHY_POINTS_THRESHOLD
 
 def gets_trophy_longest(game_spec, words):
     max_len = max(len(word) for word in words)
@@ -337,7 +348,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['num_games'] += 1
         game_data['running'] = True
         game_data['start_time'] = datetime.datetime.timestamp(datetime.datetime.now())
-        game_data['seed'] = random.randrange(1<<30)
+        game_data['seed'] = random.SystemRandom().randrange(1<<28)
         game_data['level'] = level
         game_data['words'] = []
         game_data['round_trophies'] = 0

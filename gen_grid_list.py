@@ -8,8 +8,13 @@ fontDir = dataDir/"fonts/Roboto-Medium.ttf"
 
 
 def _solve_init(board, level):
+    print(board, level)
     # Return generator of words found
-    alphabet = ''.join(set(''.join([''.join(i) for i in board])))
+
+    if level != 3:
+        alphabet = ''.join(set(''.join([''.join(i) for i in board])))
+    else:
+        alphabet = ''.join(set(''.join([''.join([''.join(j) for j in i]) for i in board])))
     bogglable = re.compile('[' + alphabet + ']{3,}$', re.I).match
 
     words = set(word.lower().rstrip('\n') for word in open(str(dictDir)) if bogglable(word))
@@ -47,7 +52,7 @@ def _solve_init(board, level):
             if (nx, ny, nz) not in path:
                 prefix1 = prefix + board[nz][ny][nx]
                 if prefix1 in prefixes:
-                    for result in extending(prefix1, path + ((nx, ny, nz),)):
+                    for result in extending3(prefix1, path + ((nx, ny, nz),)):
                         yield result
 
     def neighbors(x, y, z=0):
