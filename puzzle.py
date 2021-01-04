@@ -335,6 +335,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
             msg['score'] = self.get_score(game_data)
             msg['grid'] = get_game_spec(game_data).grid
             msg['totNumWords'] = self.get_tot_num_words(game_data)
+            msg['debugSeed'] = game_data['seed']
 
             special = get_game_spec(game_data).special
             found_special = len([w for w in words if w[0] == special]) > 0
@@ -363,6 +364,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['level'] = level
         game_data['words'] = []
         game_data['round_trophies'] = 0
+        print(game_data['seed'])
         print(get_game_spec(game_data).special)
         return game_data, self.make_full_update(game_data, True)
 
