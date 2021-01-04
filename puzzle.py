@@ -105,7 +105,7 @@ class BoggleGameSpec:
         )
 
 DATABASE_VERSION = 3
-ANSWER = 'THISISANANSWER!!'
+ANSWER = 'NOHTDORUWEAARLDN'
 HISCORE_SCALE = 100000
 
 # TODO: make sure this is eventually 100
