@@ -104,7 +104,7 @@ class BoggleGameSpec:
             wordlist[0][0]
         )
 
-DATABASE_VERSION = 2
+DATABASE_VERSION = 3
 ANSWER = 'THISISANANSWER!!'
 HISCORE_SCALE = 100000
 
@@ -156,10 +156,7 @@ def get_game_spec(game_data):
     return game_spec_cache[key][1]
 
 def get_total_score(game_spec, words):
-    return sum([
-        next(w[1] for w in game_spec.wordlist if w[0] == word)
-        for word in words
-    ])
+    return sum([w[1] for w in words])
 
 def get_max_score(game_spec):
     return sum([w[1] for w in game_spec.wordlist])
@@ -177,12 +174,12 @@ def gets_trophy_points(game_spec, words):
     return score >= max_score * TROPHY_POINTS_THRESHOLD
 
 def gets_trophy_longest(game_spec, words):
-    max_len = max(len(word) for word in words)
+    max_len = max(len(w[0]) for w in words)
     max_len_all = max(len(w[0]) for w in game_spec.wordlist)
     return max_len >= max_len_all
 
 def gets_trophy_special(game_spec, words):
-    return game_spec.special in words
+    return len([w for w in words if w[0] == game_spec.special]) > 0
 
 GETS_TROPHY_FUNCS = [
     gets_trophy_num,
@@ -325,13 +322,21 @@ class BoggleConsumer(TeamworkTimeConsumer):
         }
 
         if is_running:
+            words = game_data['words']
+
             msg['level'] = game_data['level']
             msg['timeLeft'] = self.get_cl_time_left(game_data)
             msg['totTime'] = self.get_cl_tot_time(game_data)
-            msg['words'] = game_data['words']
+            msg['words'] = words
             msg['score'] = self.get_score(game_data)
             msg['grid'] = get_game_spec(game_data).grid
             msg['totNumWords'] = self.get_tot_num_words(game_data)
+
+            special = get_game_spec(game_data).special
+            found_special = len([w for w in words if w[0] == special]) > 0
+            if found_special:
+                msg['special'] = special
+
 
         return [BoggleAction(broadcast, msg)]
 
@@ -389,12 +394,14 @@ class BoggleConsumer(TeamworkTimeConsumer):
             return game_data, self.make_full_update(game_data)
 
         game_spec = get_game_spec(game_data)
-        if word not in [w[0] for w in game_spec.wordlist]:
+        entries = [w for w in game_spec.wordlist if w[0] == word]
+        if len(entries) == 0:
             return None, self.make_grade(word, GRADE_WRONG)
-        if word in game_data['words']:
+        entry = entries[0]
+        if entry in game_data['words']:
             return None, self.make_grade(word, GRADE_DUPLICATE)
 
-        game_data['words'] += [word]
+        game_data['words'] += [entry]
 
         round_trophies = self.get_round_trophies(game_data)
         new_trophies = round_trophies & (~game_data['trophies'])

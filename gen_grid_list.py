@@ -8,7 +8,7 @@ fontDir = dataDir/"fonts/Roboto-Medium.ttf"
 
 
 def _solve_init(board, level):
-    print(board, level)
+    # print(board, level)
     # Return generator of words found
 
     if level != 3:
