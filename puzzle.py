@@ -8,7 +8,7 @@ from asgiref.sync import async_to_sync
 
 from hunt.teamwork import TeamworkTimeConsumer
 from .validate import Validator as V
-# from .boggle_backend import gen_image
+from .gen_grid_list import _get_score_dict
 
 class BoggleAction:
     def __init__(self, broadcast, data):
@@ -42,42 +42,42 @@ TIME_LIMITS_PER_LEVEL = [
 TESTING_BOARDS = [
   [
     ["#", "#", "#", "#", "#", "#"],
-    ["#", "C", "D", "E", "F", "#"],
-    ["#", "H", "I", "J", "K", "#"],
-    ["#", "N", "O", "P", "Qu", "#"],
-    ["#", "S", "T", "U", "V", "#"],
+    ["#", "c", "d", "e", "f", "#"],
+    ["#", "h", "i", "j", "k", "#"],
+    ["#", "n", "o", "p", "qu", "#"],
+    ["#", "s", "t", "u", "v", "#"],
     ["#", "#", "#", "#", "#", "#"],
   ],
   [
-    ["#", "#", "A", "B", "C"],
-    ["#", "E", "F", "G", "H"],
-    ["I", "J", "K", "L", "M"],
-    ["N", "O", "P", "Qu", "#"],
-    ["R", "S", "T", "#", "#"],
+    ["#", "#", "a", "b", "c"],
+    ["#", "e", "f", "g", "h"],
+    ["i", "j", "k", "l", "m"],
+    ["n", "o", "p", "qu", "#"],
+    ["r", "s", "t", "#", "#"],
   ],
   [
-    ["#", "#", "A", "B", "#", "#"],
-    ["#", "C", "D", "E", "F", "#"],
-    ["G", "H", "I", "J", "K", "L"],
-    ["M", "N", "O", "P", "Qu", "R"],
-    ["#", "S", "T", "U", "V", "#"],
-    ["#", "#", "W", "X", "#", "#"],
+    ["#", "#", "a", "b", "#", "#"],
+    ["#", "c", "d", "e", "f", "#"],
+    ["g", "h", "i", "j", "k", "l"],
+    ["m", "n", "o", "p", "qu", "r"],
+    ["#", "s", "t", "u", "v", "#"],
+    ["#", "#", "w", "x", "#", "#"],
   ],
   [
     [
-      ["A", "B", "C"],
-      ["D", "E", "F"],
-      ["G", "H", "I"],
+      ["a", "b", "c"],
+      ["d", "e", "f"],
+      ["g", "h", "i"],
     ],
     [
-      ["J", "K", "L"],
-      ["M", "N", "O"],
-      ["P", "Qu", "R"],
+      ["j", "k", "l"],
+      ["m", "n", "o"],
+      ["p", "qu", "r"],
     ],
     [
-      ["S", "T", "U"],
-      ["V", "W", "X"],
-      ["Y", "Z", "A"],
+      ["s", "t", "u"],
+      ["v", "w", "x"],
+      ["y", "z", "a"],
     ],
   ],
 ]
@@ -91,20 +91,17 @@ class BoggleGameSpec:
 
     @staticmethod
     def get_testing_spec(level):
-        testing_words = [
-            'red',
-            'orange',
-            'yellow',
-            'green',
-            'blue',
-            'indigo',
-            'violet'
+        board = TESTING_BOARDS[level]
+        wordlist = [
+            (word, score) for word, score in
+            _get_score_dict(board, level, {}).items()
         ]
+        print(wordlist)
         return BoggleGameSpec(
             level,
             TESTING_BOARDS[level],
-            [(word, len(word)) for word in testing_words],
-            'green'
+            wordlist,
+            wordlist[0][0]
         )
 
 DATABASE_VERSION = 2
