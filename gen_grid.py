@@ -1,12 +1,13 @@
 import random, copy
 
+_CARROLLWORDS = ["mimsy", "vorpal", "chortle", "frumious", "slithy", "burble", "borogove", "brillig", "gimble", "jubjub", "manxome", "outgrabe", "tulgey", "uffish", "callay", "callooh", "tumtum", "wabe", "tove"]
+#_CARROLLWORDS += ["galumph", "frabjous", "snark", "portmanteau"]
+
 def gen_grid(level, seed):
     r = random.Random(seed*4+level)
     _FREQ = [119,29,64,53,181,19,43,37,142,3,13,84,45,108,104,46,3,112,150,105,51,15,12,5,26,8]
     _BONUSES = [{(1,1):2,(4,4):3}, {(0,2):2,(2,4):2,(4,0):2}, {(0,2):2,(5,3):2,(2,5):3,(3,0):3}, {(0,0,0):2,(0,2,2):3,(2,2,0):3,(2,0,2):2}]
     bonuses = _BONUSES[level]
-    _CARROLLWORDS = ["mimsy", "vorpal", "chortle", "frumious", "slithy", "burble", "borogove", "brillig", "gimble", "jubjub", "manxome", "outgrabe", "tulgey", "uffish", "callay", "callooh", "tumtum", "wabe", "tove"]
-    #_CARROLLWORDS += ["galumph", "frabjous", "snark", "portmanteau"]
 
     _PATHS = ((7,8,15,10,9,16,22,28,27,26,21,14,19,25,20,13), (2,7,12,8,3,4,9,14,18,13,17,22,21,20,16,15,10,11,6), (2,10,23,27,16,3,14,25,12,8,21,32,19,15,7,18,26,22,33,20,28,11,9,13), (0,1,2,11,14,23,26,17,16,25,22,19,18,21,24,15,6,7,8,5,4,13,10,9,12,3))
     _PATHCELLS = (16, 19, 24, 26)

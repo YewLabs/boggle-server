@@ -357,6 +357,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['level'] = level
         game_data['words'] = []
         game_data['round_trophies'] = 0
+        print(get_game_spec(game_data).special)
         return game_data, self.make_full_update(game_data, True)
 
     def handle_stop(self, game_data, msg):

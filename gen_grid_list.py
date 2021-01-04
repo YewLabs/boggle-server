@@ -1,11 +1,14 @@
 import pathlib, re
+from .gen_grid import _CARROLLWORDS
 
 dataDir = pathlib.Path(__file__).parent.resolve() / 'data'
 # feel free to experiment with this
 dictDir = dataDir/"dict/enable2k.txt"
 fontDir = dataDir/"fonts/Roboto-Medium.ttf"
 
-
+all_words_l = [word for word in open(str(dictDir))]
+all_words_l += _CARROLLWORDS
+all_words = set(word.lower().rstrip('\n') for word in all_words_l)
 
 def _solve_init(board, level):
     # print(board, level)
@@ -16,8 +19,8 @@ def _solve_init(board, level):
     else:
         alphabet = ''.join(set(''.join([''.join([''.join(j) for j in i]) for i in board])))
     bogglable = re.compile('[' + alphabet + ']{3,}$', re.I).match
+    words = [word for word in all_words if bogglable(word)]
 
-    words = set(word.lower().rstrip('\n') for word in open(str(dictDir)) if bogglable(word))
     prefixes = set(word[:i] for word in words
                 for i in range(2, len(word)+1))
 
