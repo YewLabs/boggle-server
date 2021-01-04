@@ -95,7 +95,7 @@ class BoggleGameSpec:
         board = TESTING_BOARDS[level]
         wordlist = [
             (word, score) for word, score in
-            _get_score_dict(board, level, {}).items()
+            _get_score_dict(board, level, {}, "").items()
         ]
         return BoggleGameSpec(
             level,
@@ -116,7 +116,7 @@ def gen_game_spec(level, seed):
     grid, bonuses, special = gen_grid(level, seed)
     wordlist = [
         (word, score) for word, score in
-        _get_score_dict(grid, level, bonuses).items()
+        _get_score_dict(grid, level, bonuses, cword).items()
     ]
     return BoggleGameSpec(
         level, grid, wordlist, special

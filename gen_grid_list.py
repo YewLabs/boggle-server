@@ -81,9 +81,11 @@ def _solve_init(board, level):
     
     return solve()
 
-def _get_score_dict(board, level, bonus):
+def _get_score_dict(board, level, bonus, cword):
     valid_words = {}
     def score_word(x):
+        if x == cword:
+            return 250
         x = len(x)
         if x <= 6:
             return (x-2)*(x-3)*5+10

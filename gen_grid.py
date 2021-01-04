@@ -1,7 +1,7 @@
 import random, copy
 
 _CARROLLWORDS = ["mimsy", "vorpal", "chortle", "frumious", "slithy", "burble", "borogove", "brillig", "gimble", "jubjub", "manxome", "outgrabe", "tulgey", "uffish", "callay", "callooh", "tumtum", "wabe", "tove"]
-#_CARROLLWORDS += ["galumph", "frabjous", "snark", "portmanteau"]
+_CARROLLWORDS += ["galumph", "frabjous", "snark", "portmanteau"]
 
 def gen_grid(level, seed):
     r = random.Random(seed*4+level)
