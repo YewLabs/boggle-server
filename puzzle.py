@@ -116,7 +116,7 @@ def gen_game_spec(level, seed):
     grid, bonuses, special = gen_grid(level, seed)
     wordlist = [
         (word, score) for word, score in
-        _get_score_dict(grid, level, bonuses, cword).items()
+        _get_score_dict(grid, level, bonuses, special).items()
     ]
     return BoggleGameSpec(
         level, grid, wordlist, special
