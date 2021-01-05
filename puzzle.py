@@ -171,6 +171,7 @@ L3_TROPHY_NUM_WORDS_THRESHOLD = 0.15
 L3_TROPHY_POINTS_THRESHOLD = 0.05
 
 def gets_trophy_num(game_spec, words):
+    level = game_spec.level
     threshold = L3_TROPHY_NUM_WORDS_THRESHOLD if (level == 3) else TROPHY_NUM_WORDS_THRESHOLD
     return len(words) >= len(game_spec.wordlist) * threshold
 
