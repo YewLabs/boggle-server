@@ -165,16 +165,21 @@ def get_max_score(game_spec):
     return sum([w[1] for w in game_spec.wordlist])
 
 # TODO: make sure these are reasonable numbers
-TROPHY_NUM_WORDS_THRESHOLD = 0.2
+TROPHY_NUM_WORDS_THRESHOLD = 0.3
 TROPHY_POINTS_THRESHOLD = 0.2
+L3_TROPHY_NUM_WORDS_THRESHOLD = 0.15
+L3_TROPHY_POINTS_THRESHOLD = 0.05
 
 def gets_trophy_num(game_spec, words):
-    return len(words) >= len(game_spec.wordlist) * TROPHY_NUM_WORDS_THRESHOLD
+    threshold = L3_TROPHY_NUM_WORDS_THRESHOLD if (level == 3) else TROPHY_NUM_WORDS_THRESHOLD
+    return len(words) >= len(game_spec.wordlist) * threshold
 
 def gets_trophy_points(game_spec, words):
+    level = game_spec.level
     score = get_total_score(game_spec, words)
     max_score = get_max_score(game_spec)
-    return score >= max_score * TROPHY_POINTS_THRESHOLD
+    threshold = L3_TROPHY_POINTS_THRESHOLD if (level == 3) else TROPHY_POINTS_THRESHOLD
+    return score >= max_score * threshold
 
 def gets_trophy_longest(game_spec, words):
     max_len = max(len(w[0]) for w in words)
