@@ -501,8 +501,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
 
         round_trophies = self.get_round_trophies(game_data)
         new_trophies = round_trophies & (~game_data['trophies'])
-        game_data['trophies'] |= new_trophies
-        game_data['round_trophies'] |= new_trophies
+        game_data['trophies'] |= round_trophies
+        game_data['round_trophies'] |= round_trophies
 
         # unlock if solvers get any trophy in level
         if new_trophies != 0:
