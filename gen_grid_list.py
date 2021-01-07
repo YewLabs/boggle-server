@@ -1,4 +1,4 @@
-import pathlib, re
+import pathlib
 from .gen_grid import _CARROLLWORDS
 
 dataDir = pathlib.Path(__file__).parent.resolve() / 'data'
