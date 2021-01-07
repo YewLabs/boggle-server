@@ -124,7 +124,7 @@ def gen_game_spec(level, seed):
             _get_score_dict(grid, level, bonuses).items()
         ]
         if len(wordlist) >= cutoff:
-            invalid_grid = True
+            invalid_grid = False
         else:
             cutoff -= 1
 
