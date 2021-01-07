@@ -2,14 +2,14 @@ import json
 import datetime
 import random
 
-from django.db import models
-from spoilr.models import *
 from asgiref.sync import async_to_sync
 
 from hunt.teamwork import TeamworkTimeConsumer
 from .validate import Validator as V
 from .gen_grid_list import _get_score_dict
 from .gen_grid import gen_grid
+
+from .models import *
 
 class BoggleAction:
     def __init__(self, broadcast, data):
@@ -23,15 +23,6 @@ class BoggleAction:
     @staticmethod
     def make_broadcast(data):
         return BoggleAction(True, data)
-
-class BoggleTeamData(models.Model):
-    team = models.OneToOneField(Team, on_delete=models.CASCADE)
-    world = models.TextField()
-
-class BoggleHighScoreData(models.Model):
-    team = models.ForeignKey(Team, on_delete=models.CASCADE)
-    level = models.PositiveIntegerField(default=0)
-    score = models.PositiveIntegerField(default=0)
 
 # TODO: make sure these are reasonable
 TIME_LIMITS_PER_LEVEL = [
@@ -192,7 +183,7 @@ def gets_trophy_points(game_spec, words, threshold):
 #     max_len = max(len(w[0]) for w in words)
 #     max_len_all = max(len(w[0]) for w in game_spec.wordlist)
 #     return max_len >= max_len_all
-# 
+#
 # def gets_trophy_special(game_spec, words):
 #     return len([w for w in words if w[0] == game_spec.special]) > 0
 
