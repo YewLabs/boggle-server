@@ -33,11 +33,12 @@ class BoggleHighScoreData(models.Model):
     level = models.PositiveIntegerField(default=0)
     score = models.PositiveIntegerField(default=0)
 
+# TODO: make sure these are reasonable
 TIME_LIMITS_PER_LEVEL = [
-    datetime.timedelta(seconds=300),
-    datetime.timedelta(seconds=300),
-    datetime.timedelta(seconds=300),
-    datetime.timedelta(seconds=300),
+    datetime.timedelta(seconds=120),
+    datetime.timedelta(seconds=120),
+    datetime.timedelta(seconds=120),
+    datetime.timedelta(seconds=120),
 ]
 
 TESTING_BOARDS = [
@@ -84,9 +85,10 @@ TESTING_BOARDS = [
 ]
 
 class BoggleGameSpec:
-    def __init__(self, level, grid, wordlist, special):
+    def __init__(self, level, grid, bonuses, wordlist, special):
         self.level = level
         self.grid = grid
+        self.bonuses = bonuses
         self.wordlist = wordlist
         self.special = special
 
@@ -95,16 +97,17 @@ class BoggleGameSpec:
         board = TESTING_BOARDS[level]
         wordlist = [
             (word, score) for word, score in
-            _get_score_dict(board, level, {}).items()
+            _get_score_dict(board, level, {}, "").items()
         ]
         return BoggleGameSpec(
             level,
             board,
+            {},
             wordlist,
             wordlist[0][0]
         )
 
-DATABASE_VERSION = 3
+DATABASE_VERSION = 4
 ANSWER = 'NOHTDORUWEAARLDN'
 HISCORE_SCALE = 100000
 
@@ -129,7 +132,7 @@ def gen_game_spec(level, seed):
             cutoff -= 1
 
     return BoggleGameSpec(
-        level, grid, wordlist, special
+        level, grid, bonuses, wordlist, special
     )
 
 def discard_game_spec_from_cache(game_data):
@@ -172,41 +175,124 @@ def get_max_score(game_spec):
     return sum([w[1] for w in game_spec.wordlist])
 
 # TODO: make sure these are reasonable numbers
-TROPHY_NUM_WORDS_THRESHOLD = 0.5
-TROPHY_POINTS_THRESHOLD = 0.5
+TROPHY_NUM_WORDS_THRESHOLD_LOW = 0.3
+TROPHY_NUM_WORDS_THRESHOLD_HIGH = 0.6
+TROPHY_POINTS_THRESHOLD_LOW = 0.3
+TROPHY_POINTS_THRESHOLD_HIGH= 0.6
 
-def gets_trophy_num(game_spec, words):
-    return len(words) >= len(game_spec.wordlist) * TROPHY_NUM_WORDS_THRESHOLD
+def gets_trophy_num(game_spec, words, threshold):
+    return len(words) >= len(game_spec.wordlist) * threshold
 
-def gets_trophy_points(game_spec, words):
+def gets_trophy_points(game_spec, words, threshold):
     score = get_total_score(game_spec, words)
     max_score = get_max_score(game_spec)
-    return score >= max_score * TROPHY_POINTS_THRESHOLD
+    return score >= max_score * threshold
 
-def gets_trophy_longest(game_spec, words):
-    max_len = max(len(w[0]) for w in words)
-    max_len_all = max(len(w[0]) for w in game_spec.wordlist)
-    return max_len >= max_len_all
-
-def gets_trophy_special(game_spec, words):
-    return len([w for w in words if w[0] == game_spec.special]) > 0
+# def gets_trophy_longest(game_spec, words):
+#     max_len = max(len(w[0]) for w in words)
+#     max_len_all = max(len(w[0]) for w in game_spec.wordlist)
+#     return max_len >= max_len_all
+# 
+# def gets_trophy_special(game_spec, words):
+#     return len([w for w in words if w[0] == game_spec.special]) > 0
 
 GETS_TROPHY_FUNCS = [
     gets_trophy_num,
     gets_trophy_points,
-    gets_trophy_longest,
-    gets_trophy_special,
+    gets_trophy_num,
+    gets_trophy_points,
 ]
 
 def gets_trophy(game_data, index):
     game_spec = get_game_spec(game_data)
+    level = game_spec.level
     words = game_data['words']
-    return GETS_TROPHY_FUNCS[index](game_spec, words)
+    threshold = [
+        TROPHY_NUM_WORDS_THRESHOLD_LOW,
+        TROPHY_POINTS_THRESHOLD_LOW,
+        TROPHY_NUM_WORDS_THRESHOLD_HIGH,
+        TROPHY_POINTS_THRESHOLD_HIGH,
+    ][index]
+    return GETS_TROPHY_FUNCS[index](game_spec, words, threshold)
 
 # response codes to client words
 GRADE_WRONG = 0
 GRADE_DUPLICATE = 1
 GRADE_CORRECT = 2
+
+def game_get_max_score(game_data):
+    return get_max_score(get_game_spec(game_data))
+
+def game_get_score(game_data):
+    return get_total_score(get_game_spec(game_data), game_data['words'])
+
+def game_get_max_num_words(game_data):
+    return len(get_game_spec(game_data).wordlist)
+
+def game_get_num_words(game_data):
+    return len(game_data['words'])
+
+def game_get_special(game_data):
+    return get_game_spec(game_data).special
+
+def game_get_found_special(game_data):
+    special = game_get_special(game_data)
+    return len([w for w in game_data['words'] if w[0] == special]) > 0
+
+class BoggleStats:
+    def __init__(self):
+        self.tot_words = 0 # total number of words, ever
+        self.best_score = [
+            None, None, None, None
+        ] # best % score for each level
+        self.best_num_words = [
+            None, None, None, None
+        ] # best % words for each level
+        self.highest_scoring = [
+        ] # highest scoring found
+
+        # Note: this is no longer used
+        self.special = [
+        ] # special words found
+
+    def from_dict(self, d):
+        self.tot_words = d['tot_words']
+        self.best_score = d['best_score']
+        self.best_num_words = d['best_num_words']
+        self.highest_scoring = d['highest_scoring']
+        self.special = d['special']
+
+    def to_dict(self):
+        return {
+            'tot_words': self.tot_words,
+            'best_score': self.best_score,
+            'best_num_words': self.best_num_words,
+            'highest_scoring': self.highest_scoring,
+            'special': self.special,
+        }
+
+    def update_stats(self, game_data):
+        self.tot_words += len(game_data['words'])
+        level = game_data['level']
+        score = game_get_score(game_data) / game_get_max_score(game_data)
+        num_words = game_get_num_words(game_data) / game_get_max_num_words(game_data)
+        if self.best_score[level] is None or score > self.best_score[level]:
+            self.best_score[level] = score
+        if self.best_num_words[level] is None or num_words > self.best_num_words[level]:
+            self.best_num_words[level] = num_words
+
+        all_entries = sorted(self.highest_scoring + game_data['words'], key=lambda entry: entry[1], reverse=True)
+        scores_dict = {}
+        self.highest_scoring = []
+        for entry in all_entries:
+            if entry[0] not in scores_dict:
+                scores_dict[entry[0]] = entry[1]
+                self.highest_scoring += [entry]
+                if len(self.highest_scoring) >= 3:
+                    break
+
+        # if game_get_found_special(game_data):
+        #     self.special = list(set(self.special + [game_get_special(game_data)]))
 
 class BoggleConsumer(TeamworkTimeConsumer):
     def setup(self):
@@ -228,6 +314,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
             'words': None,
             'round_trophies': 0, # bitmask
             'trophies': 0, # bitmask
+            'stats': BoggleStats(),
         }
 
     # WARNING: for simplicity, reducer is allowed to mutate game_data
@@ -237,6 +324,9 @@ class BoggleConsumer(TeamworkTimeConsumer):
 
         try:
             game_data = json.loads(data.world)
+            stats = BoggleStats()
+            stats.from_dict(game_data['stats'])
+            game_data['stats'] = stats
         except:
             game_data = self.make_init()
 
@@ -246,6 +336,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         new_game_data, actions = reducer(game_data, msg)
 
         if new_game_data is not None:
+            new_game_data['stats'] = new_game_data['stats'].to_dict()
             data.world = json.dumps(new_game_data)
             data.save()
 
@@ -275,12 +366,6 @@ class BoggleConsumer(TeamworkTimeConsumer):
     def get_cl_tot_time(self, game_data):
         return self.get_time_limit(game_data) / datetime.timedelta(milliseconds=1)
 
-    def get_score(self, game_data):
-        return get_total_score(get_game_spec(game_data), game_data['words'])
-
-    def get_tot_num_words(self, game_data):
-        return len(get_game_spec(game_data).wordlist)
-
     def cl_num_games_valid(self, game_data, msg):
         if not V.has_key(msg, 'numGames') or not V.is_nat(msg['numGames']):
             return False
@@ -291,8 +376,15 @@ class BoggleConsumer(TeamworkTimeConsumer):
         return True
 
     def stop_game(self, game_data):
-        max_score = get_max_score(get_game_spec(game_data))
-        hiscore = int(self.get_score(game_data) / max_score * HISCORE_SCALE)
+        # found_special = game_get_found_special(game_data)
+        all_words = [
+            w for w in get_game_spec(game_data).wordlist
+            # if found_special or w[0] != get_game_spec(game_data).special
+        ]
+
+        game_data['stats'].update_stats(game_data)
+        max_score = game_get_max_score(game_data)
+        hiscore = int(game_get_score(game_data) / max_score * HISCORE_SCALE)
         self.set_hiscore(game_data['level'], hiscore)
         discard_game_spec_from_cache(game_data)
         game_data['running'] = False
@@ -301,6 +393,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['level'] = None
         game_data['words'] = None
         game_data['round_trophies'] = 0
+
+        return self.make_full_update(game_data, True, all_words=all_words)
 
     def get_trophy_string(self, game_data):
         res = ''
@@ -320,16 +414,21 @@ class BoggleConsumer(TeamworkTimeConsumer):
             'grade': grade,
         })]
 
-    def make_full_update(self, game_data, broadcast=False):
+    def make_full_update(self, game_data, broadcast=False, all_words=None):
         is_running = game_data['running']
+        max_level = game_data['max_level']
         msg = {
             'type': 'full',
             'numGames': game_data['num_games'],
-            'maxLevel': game_data['max_level'],
+            'maxLevel': max_level,
             'running': is_running,
             'trophies': self.get_trophy_string(game_data),
             'roundTrophies': game_data['round_trophies'],
+            'stats': game_data['stats'].to_dict(),
         }
+
+        if max_level >= 4:
+            msg['blanks'] = '_ _ _ _ _ _ _ _ _ _   _ _ _ _ _ _'
 
         if is_running:
             words = game_data['words']
@@ -338,15 +437,19 @@ class BoggleConsumer(TeamworkTimeConsumer):
             msg['timeLeft'] = self.get_cl_time_left(game_data)
             msg['totTime'] = self.get_cl_tot_time(game_data)
             msg['words'] = words
-            msg['score'] = self.get_score(game_data)
+            msg['score'] = game_get_score(game_data)
             msg['grid'] = get_game_spec(game_data).grid
-            msg['totNumWords'] = self.get_tot_num_words(game_data)
+            msg['bonuses'] = [[k, v] for k, v in get_game_spec(game_data).bonuses.items()]
+            msg['totNumWords'] = game_get_max_num_words(game_data)
+            msg['debugSeed'] = game_data['seed']
 
-            special = get_game_spec(game_data).special
-            found_special = len([w for w in words if w[0] == special]) > 0
-            if found_special:
-                msg['special'] = special
+            # special = game_get_special(game_data)
+            # found_special = game_get_found_special(game_data)
+            # if found_special:
+            #     msg['special'] = special
 
+        if all_words is not None:
+            msg['allWords'] = all_words
 
         return [BoggleAction(broadcast, msg)]
 
@@ -367,7 +470,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['level'] = level
         game_data['words'] = []
         game_data['round_trophies'] = 0
-        print(get_game_spec(game_data).special)
+        print(game_data['seed'])
         return game_data, self.make_full_update(game_data, True)
 
     def handle_stop(self, game_data, msg):
@@ -376,8 +479,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
         if not self.cl_num_games_valid(game_data, msg):
             return None, self.make_full_update(game_data)
 
-        self.stop_game(game_data)
-        return game_data, self.make_full_update(game_data, True)
+        actions = self.stop_game(game_data)
+        return game_data, actions
 
     def get_round_trophies(self, game_data):
         level = game_data['level']
@@ -401,8 +504,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
             return None, self.make_full_update(game_data)
 
         if self.get_time_left(game_data) < datetime.timedelta():
-            self.stop_game(game_data)
-            return game_data, self.make_full_update(game_data)
+            actions = self.stop_game(game_data)
+            return game_data, actions
 
         game_spec = get_game_spec(game_data)
         entries = [w for w in game_spec.wordlist if w[0] == word]
@@ -416,8 +519,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
 
         round_trophies = self.get_round_trophies(game_data)
         new_trophies = round_trophies & (~game_data['trophies'])
-        game_data['trophies'] |= new_trophies
-        game_data['round_trophies'] |= new_trophies
+        game_data['trophies'] |= round_trophies
+        game_data['round_trophies'] |= round_trophies
 
         # unlock if solvers get any trophy in level
         if new_trophies != 0:
