@@ -8,21 +8,13 @@ fontDir = dataDir/"fonts/Roboto-Medium.ttf"
 
 all_words_l = [word for word in open(str(dictDir))]
 all_words_l += _CARROLLWORDS
-all_words = set(word.lower().rstrip('\n') for word in all_words_l)
+words = set(word.lower().rstrip('\n') for word in all_words_l if len(word) >= 4) # 4 because all words have trailing \n
+prefixes = set(word[:i] for word in words
+                for i in range(2, len(word)+1))
 
 def _solve_init(board, level):
     # print(board, level)
     # Return generator of words found
-
-    if level != 3:
-        alphabet = ''.join(set(''.join([''.join(i) for i in board])))
-    else:
-        alphabet = ''.join(set(''.join([''.join([''.join(j) for j in i]) for i in board])))
-    bogglable = re.compile('[' + alphabet + ']{3,}$', re.I).match
-    words = [word for word in all_words if bogglable(word)]
-
-    prefixes = set(word[:i] for word in words
-                for i in range(2, len(word)+1))
 
     def solve():
         if level != 3:

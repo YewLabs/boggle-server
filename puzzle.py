@@ -113,11 +113,21 @@ CACHE_SIZE = 100
 game_spec_cache = {}
 
 def gen_game_spec(level, seed):
-    grid, bonuses, special = gen_grid(level, seed)
-    wordlist = [
-        (word, score) for word, score in
-        _get_score_dict(grid, level, bonuses).items()
-    ]
+    cutoff = 105
+    invalid_grid = False
+    rand_obj = random.Random(seed)
+
+    while invalid_grid:
+        grid, bonuses, special = gen_grid(level, rand_obj)
+        wordlist = [
+            (word, score) for word, score in
+            _get_score_dict(grid, level, bonuses).items()
+        ]
+        if len(wordlist) >= cutoff:
+            invalid_grid = True
+        else:
+            cutoff -= 1
+
     return BoggleGameSpec(
         level, grid, wordlist, special
     )
