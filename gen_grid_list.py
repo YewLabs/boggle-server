@@ -1,20 +1,28 @@
 import pathlib
 from .gen_grid import _CARROLLWORDS
 
-dataDir = pathlib.Path(__file__).parent.resolve() / 'data'
-# feel free to experiment with this
-dictDir = dataDir/"dict/enable2k.txt"
-fontDir = dataDir/"fonts/Roboto-Medium.ttf"
+words = None
+prefixes = None
 
-all_words_l = [word for word in open(str(dictDir))]
-all_words_l += _CARROLLWORDS
-words = set(word.lower().rstrip('\n') for word in all_words_l if len(word) >= 4) # 4 because all words have trailing \n
-prefixes = set(word[:i] for word in words
-                for i in range(2, len(word)+1))
+def gen_words_and_prefixes():
+    global words, prefixes
+
+    dataDir = pathlib.Path(__file__).parent.resolve() / 'data'
+    # feel free to experiment with this
+    dictDir = dataDir/"dict/enable2k.txt"
+
+    all_words_l = [word for word in open(str(dictDir))]
+    all_words_l += _CARROLLWORDS
+    words = set(word.lower().rstrip('\n') for word in all_words_l if len(word) >= 4) # 4 because all words have trailing \n
+    prefixes = set(word[:i] for word in words
+                    for i in range(2, len(word)+1))
 
 def _solve_init(board, level):
     # print(board, level)
     # Return generator of words found
+
+    if words is None:
+        gen_words_and_prefixes()
 
     def solve():
         if level != 3:
