@@ -432,6 +432,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
             msg['grid'] = get_game_spec(game_data).grid
             msg['bonuses'] = [[k, v] for k, v in get_game_spec(game_data).bonuses.items()]
             msg['totNumWords'] = game_get_max_num_words(game_data)
+            msg['maxScore'] = game_get_max_score(game_data)
             msg['debugSeed'] = game_data['seed']
 
             # special = game_get_special(game_data)
