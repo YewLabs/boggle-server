@@ -111,11 +111,12 @@ def gen_game_spec(level, seed):
     invalid_grid = True
     rand_obj = random.Random(seed)
 
+    gen_level = [0, 1, 3, 2][level]
     while invalid_grid:
-        grid, bonuses, special = gen_grid(level, rand_obj)
+        grid, bonuses, special = gen_grid(gen_level, rand_obj)
         wordlist = [
             (word, score) for word, score in
-            _get_score_dict(grid, level, bonuses).items()
+            _get_score_dict(grid, gen_level, bonuses).items()
         ]
         if len(wordlist) >= cutoff:
             invalid_grid = False
@@ -166,10 +167,12 @@ def get_max_score(game_spec):
     return sum([w[1] for w in game_spec.wordlist])
 
 # TODO: make sure these are reasonable numbers
-TROPHY_NUM_WORDS_THRESHOLD_LOW = 0.3
-TROPHY_NUM_WORDS_THRESHOLD_HIGH = 0.6
-TROPHY_POINTS_THRESHOLD_LOW = 0.3
-TROPHY_POINTS_THRESHOLD_HIGH= 0.6
+TROPHY_THRESHOLDS = [
+    [30, 50],
+    [30, 50],
+    [25, 45],
+    [20, 35],
+]
 
 def gets_trophy_num(game_spec, words, threshold):
     return len(words) >= len(game_spec.wordlist) * threshold
@@ -198,12 +201,7 @@ def gets_trophy(game_data, index):
     game_spec = get_game_spec(game_data)
     level = game_spec.level
     words = game_data['words']
-    threshold = [
-        TROPHY_NUM_WORDS_THRESHOLD_LOW,
-        TROPHY_POINTS_THRESHOLD_LOW,
-        TROPHY_NUM_WORDS_THRESHOLD_HIGH,
-        TROPHY_POINTS_THRESHOLD_HIGH,
-    ][index]
+    threshold = TROPHY_THRESHOLDS[level][index // 2] / 100
     return GETS_TROPHY_FUNCS[index](game_spec, words, threshold)
 
 # response codes to client words
