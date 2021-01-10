@@ -19728,7 +19728,7 @@ evolve
 evolved
 evolves
 evolving
-ew+
+ew
 ewe
 ewer
 ewers
@@ -64356,7 +64356,7 @@ xeroxes
 xeroxing
 xylophone
 xylophones
-ya+
+ya
 yacht
 yachting
 yachts
