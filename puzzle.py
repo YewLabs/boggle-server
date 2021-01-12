@@ -460,7 +460,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         game_data['level'] = level
         game_data['words'] = []
         game_data['round_trophies'] = 0
-        print(game_data['seed'])
+        # print(game_data['seed'])
         return game_data, self.make_full_update(game_data, True)
 
     def handle_stop(self, game_data, msg):
@@ -554,7 +554,7 @@ class BoggleConsumer(TeamworkTimeConsumer):
         })]
 
     def handle(self, msg):
-        print('received ' + str(msg) + ' from ' + self.channel_name)
+        # print('received ' + str(msg) + ' from ' + self.channel_name)
 
         # this should be all the validation that is performed
         # before update_pings is called
@@ -580,8 +580,8 @@ class BoggleConsumer(TeamworkTimeConsumer):
 
         for action in actions:
             if action.broadcast:
-                print('broadcasting ' + str(action.data))
+                # print('broadcasting ' + str(action.data))
                 self.broadcast(action.data)
             else:
-                print('sending ' + str(action.data))
+                # print('sending ' + str(action.data))
                 self.respond(action.data)
