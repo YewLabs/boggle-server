@@ -1,5 +1,5 @@
 # TODO: make this eventually False
-ASSERT_VALID = True
+ASSERT_VALID = False
 
 class Validator:
     @staticmethod
