@@ -62,7 +62,7 @@ def load_all_data():
             game_data_to_dict(from_durable(json.loads(entry[1])))
         )
 
-load_all_data()
+# load_all_data()
 
 send_queue = []
 
